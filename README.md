@@ -111,6 +111,62 @@ python -m serialcommander.playground
 
 This will emulate a serial console so you can type '+', '-' or (enter) to play around.
 
+To put things on real hardware, that might look something like this (note that it's targeting my TE0714 board which is fairly uncommon, board definition can be found at http://github.com/newhouseb/boards). This example uses 44 LUTs, so pretty small.
+
+```python
+from boards.trenz import TE0714
+
+from nmigen import *
+from nmigen.build import *
+
+from serialcommander.commander import Commander
+from serialcommander.toggler import Toggler
+from serialcommander.uart import UART
+
+import sys
+import os
+import subprocess
+
+class CommanderBlinky(Elaboratable):
+    def elaborate(self, platform):
+        m = Module()
+        m.submodules.uart = uart = UART(int(25e6 / 115200))
+
+        self.toggler = Toggler()
+        m.submodules.commander = Commander(uart, {
+            '1': self.toggler,
+        })
+
+        m.d.comb += platform.request('led').eq(self.toggler.output)
+
+        m.d.comb += [
+            platform.request('uart_tx').eq(uart.tx_o),
+            uart.rx_i.eq(platform.request('uart_rx')),
+        ]
+
+        return m
+
+TE0714.resources += [
+    Resource("uart_rx", 0, Pins("R13", dir="i"), Attrs(IOSTANDARD="LVCMOS33")),
+    Resource("uart_tx", 0, Pins("T13", dir="o"), Attrs(IOSTANDARD="LVCMOS33")),
+]
+
+if __name__ == '__main__':
+    if len(sys.argv) == 1:
+        TE0714().build(CommanderBlinky(), do_program=True)
+    else:
+        subprocess.check_call([
+            'openocd',
+            '-f', 'interface/jlink.cfg',
+            '-f', 'cpld/xilinx-xc7.cfg',
+            '-c', 'adapter speed 4000',
+            '-c', 'init',
+            '-c', 'xc7_program xc7.tap',
+            '-c', 'pld load 0 {}'.format('build\\top.bit'.replace("\\", "\\\\")),
+            '-c', 'exit'
+            ])
+```
+
 
 ## Testing
 
