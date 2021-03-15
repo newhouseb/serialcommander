@@ -62,12 +62,12 @@ Note that this is echoing the characters you send, but most terminals don't do t
 
 ## Included "Tasks"
 
-- **Trigger:** Sets a signal high for one cycle
-- **Toggle:** Toggles a signal from high to low
-- **TextMemoryPrinter:** Prints a null-terminated string from Memory.
-- **BinaryMemoryPrinter:** Prints words in a Memory in binary.
-- **BinarySignalPrinter:** Prints a signal's value in binary.
-- **DecimalSignalPrinter:** Prints a signal's value in decimal.
+- **`Trigger`:** Sets a signal high for one cycle
+- **`Toggle`:** Toggles a signal from high to low
+- **`TextMemoryPrinter`:** Prints a null-terminated string from Memory.
+- **`BinaryMemoryPrinter`:** Prints words in a Memory in binary.
+- **`BinarySignalPrinter`:** Prints a signal's value in binary.
+- **`DecimalSignalPrinter`:** Prints a signal's value in decimal.
 
 ## Motivation
 
@@ -96,7 +96,7 @@ pip install git+https://github.com/nmigen/nmigen
 pip install git+https://github.com/newhouseb/serialcommander
 ```
 
-To test that everything without, there's an included playground that can be run with no hardware that explores the example above (on Windows with WSL, Linux or MacOS only):
+To test that everything without, there's an included playground that can be run with no hardware that explores the example above (on WSL on Windows, Linux or MacOS only):
 
 ```
 python -m serialcommander.playground
