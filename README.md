@@ -62,9 +62,9 @@ Note that this is echoing the characters you send, but most terminals don't do t
 
 ## Things I have used this for
 
-- I was testing various SERDES configurations and needed to read out sample data coming in 5gbps. By writing that data first into memory (deserialized to 250mhz), I could read out chunks of it via `serialcommander` for further analysis.
-- I wrote an asynchronous gray code counter and by writing clocked values into memory (at the default clock rate) I could verify that it was counting properly.
-- I use a `Toggler` connected to an LED to verify I've set up my UART correctly.
+- Testing various SERDES configurations where I needed to read out sample data coming in 5gbps. By writing that data first into memory (deserialized to 250mhz), I could read out chunks of it via `serialcommander` for further analysis.
+- Testing an asynchronous gray code counter by writing clocked values into memory (at the default clock rate), later read out and verified with `BinaryMemoryPrinter`
+- I almost always use a `Toggler` connected to an LED to verify I've set up my UART correctly.
 - When testing my bluetooth demodulator, I used `DecimalSignalPrinter` to measure the average magnitude of I&Q channels sampled from a test signal.
 
 ## Included "Tasks"
