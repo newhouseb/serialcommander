@@ -1,20 +1,26 @@
+import math
+
 from nmigen import (
         Cat,
         Elaboratable,
+        Memory,
         Module,
+        Mux,
         Signal
 )
+from nmigen.build import Platform
 
 from serialcommander.task import CommandTask
 
 class TextMemoryPrinter(CommandTask):
-    def __init__(self, mem, length):
+    """Prints a null terminated ASCII string with a trailing newline"""
+    def __init__(self, mem: Memory, length: int):
         super().__init__()
         
         self.mem = mem
         self.length = length
 
-    def elaborate(self, platform):
+    def elaborate(self, platform: Platform) -> Module:
         m = Module()
         m.submodules.r_port = r_port = self.mem.read_port()
 
@@ -66,13 +72,14 @@ class TextMemoryPrinter(CommandTask):
         return m
 
 class BinarySignalPrinter(CommandTask):
-    def __init__(self, signal):
+    """Prints a signal in binary with LSB first"""
+    def __init__(self, signal: Signal):
         super().__init__()
         
         self.signal = signal 
         self.digits = len(signal)
 
-    def elaborate(self, platform):
+    def elaborate(self, platform: Platform) -> Module:
         m = Module()
 
         snapshot = Signal(len(self.signal))
@@ -127,14 +134,16 @@ class BinarySignalPrinter(CommandTask):
         return m
 
 class BinaryMemoryPrinter(CommandTask):
-    def __init__(self, mem, width, length):
+    """Prints words from a Memory instance with LSB first."""
+
+    def __init__(self, mem: Memory, width: int, length: int):
         super().__init__()
         
         self.mem = mem
         self.width = width
         self.length = length
 
-    def elaborate(self, platform):
+    def elaborate(self, platform: Platform) -> Module:
         m = Module()
         m.submodules.r_port = r_port = self.mem.read_port()
 
@@ -188,13 +197,15 @@ class BinaryMemoryPrinter(CommandTask):
         return m
 
 class DecimalSignalPrinter(CommandTask):
-    def __init__(self, signal):
+    """Prints a Signal in decimal with leading zeros so that any valid value has the same length"""
+
+    def __init__(self, signal: Signal):
         super().__init__()
         
         self.signal = signal 
         self.digits = math.ceil(math.log(2**len(signal))/math.log(10))
 
-    def elaborate(self, platform):
+    def elaborate(self, platform: Platform) -> Module:
         m = Module()
 
         snapshot = Signal(len(self.signal))
@@ -267,13 +278,118 @@ class DecimalSignalPrinter(CommandTask):
 
         return m
 
+def test_text_memory_printer():
+    from nmigen.sim import Simulator
+    from serialcommander.commander import Commander
+    from serialcommander.uart import UART
+
+    message = "Hello World\0"
+
+    class TestRig(Elaboratable):
+        def elaborate(self, platform: Platform) -> Module:
+            m = Module()
+
+            self.printer = TextMemoryPrinter(Memory(width=8,
+                                                    depth=len(message), 
+                                                    init=[ord(c) for c in message]),
+                                               length=len(message))
+            self.uart = UART(divisor=5)
+            
+            m.submodules.uart = self.uart
+            m.submodules.commander = Commander(self.uart, {
+                '1': self.printer
+            })
+
+            return m
+
+    rig = TestRig()
+    sim = Simulator(rig)
+    sim.add_clock(1e-6)
+
+    def transmit_proc():
+        yield from rig.uart.test_send_char('1')
+        assert (yield from rig.uart.test_expect_string(message.replace('\0','\n')))
+
+    sim.add_sync_process(transmit_proc)
+
+    with sim.write_vcd("text_memory_printer.vcd"):
+        sim.run()
+
+def test_decimal_signal_printer():
+    from nmigen.sim import Simulator
+    from serialcommander.commander import Commander
+    from serialcommander.uart import UART
+
+    class TestRig(Elaboratable):
+        def elaborate(self, platform: Platform) -> Module:
+            m = Module()
+
+            sig = Signal(8, reset=128)
+
+            self.printer = DecimalSignalPrinter(sig)
+            self.uart = UART(divisor=5)
+            
+            m.submodules.uart = self.uart
+            m.submodules.commander = Commander(self.uart, {
+                '1': self.printer
+            })
+
+            return m
+
+    rig = TestRig()
+    sim = Simulator(rig)
+    sim.add_clock(1e-6)
+
+    def transmit_proc():
+        yield from rig.uart.test_send_char('1')
+        assert (yield from rig.uart.test_expect_string('128'))
+
+    sim.add_sync_process(transmit_proc)
+
+    with sim.write_vcd("decimal_signal_printer.vcd"):
+        sim.run()
+
+def test_binary_memory_printer():
+    from nmigen.sim import Simulator
+    from serialcommander.commander import Commander
+    from serialcommander.uart import UART
+
+    class TestRig(Elaboratable):
+        def elaborate(self, platform: Platform) -> Module:
+            m = Module()
+
+            self.printer = BinaryMemoryPrinter(Memory(width=4, depth=4, init=[0b0001, 0b0110, 0b1001, 0b1000]),
+                                               width=4,
+                                               length=4)
+            self.uart = UART(divisor=5)
+            
+            m.submodules.uart = self.uart
+            m.submodules.commander = Commander(self.uart, {
+                '1': self.printer
+            })
+
+            return m
+
+    rig = TestRig()
+    sim = Simulator(rig)
+    sim.add_clock(1e-6)
+
+    def transmit_proc():
+        yield from rig.uart.test_send_char('1')
+        assert (yield from rig.uart.test_expect_string('1000011010010001'))
+
+    sim.add_sync_process(transmit_proc)
+
+    with sim.write_vcd("binary_memory_printer.vcd"):
+        sim.run()
+
 def test_binary_signal_printer():
     from nmigen.sim import Simulator
     from serialcommander.commander import Commander
     from serialcommander.uart import UART
 
     class TestRig(Elaboratable):
-        def elaborate(self, platform):
+        def elaborate(self, platform: Platform) -> Module:
             m = Module()
 
             sig = Signal(5, reset=0b10101)
@@ -294,9 +410,9 @@ def test_binary_signal_printer():
 
     def transmit_proc():
         yield from rig.uart.test_send_char('1')
-        assert (yield from rig.uart.test_expect_string('101'))
+        assert (yield from rig.uart.test_expect_string('10101'))
 
     sim.add_sync_process(transmit_proc)
 
-    with sim.write_vcd("toggler.vcd", "toggler.gtkw"):
+    with sim.write_vcd("binary_signal_printer.vcd"):
         sim.run()

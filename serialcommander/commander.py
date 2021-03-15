@@ -1,17 +1,23 @@
 import math
+from typing import Dict
 
-from nmigen import *
+from nmigen import (
+    Elaboratable,
+    Module,
+    Signal
+)
+from nmigen.build import Platform
 from nmigen.sim import Simulator
 
 from serialcommander.task import CommandTask
-
+from serialcommander.uart import UART
 
 class Commander(Elaboratable):
-    def __init__(self, uart, commands):
+    def __init__(self, uart: UART, commands: Dict[str, CommandTask]):
         self.uart = uart
         self.commands = commands
 
-    def elaborate(self, platform):
+    def elaborate(self, platform: Platform) -> Module:
         m = Module()
         
         activeCommand = Signal(range(len(self.commands) + 1))
@@ -80,6 +86,3 @@ class Commander(Elaboratable):
                     m.next = "WAIT_MESSAGE"
 
         return m
-
-if __name__ == '__main__':
-    pass

@@ -1,4 +1,11 @@
-from nmigen import *
+from nmigen import (
+    Cat,
+    C,
+    Elaboratable,
+    Signal,
+    Module
+)
+from nmigen.build import Platform
 
 class UART(Elaboratable):
     """
@@ -7,15 +14,21 @@ class UART(Elaboratable):
     divisor : int
         Set to ``round(clk-rate / baud-rate)``.
         E.g. ``12e6 / 115200`` = ``104``.
+
+    Based off of the nmigen example UART
+
+    Copyright (C) 2019-2020 whitequark
+    Copyright (C) 2011-2019 M-Labs Limited
+
     """
-    def __init__(self, divisor, data_bits=8):
+    def __init__(self, divisor: int, data_bits: int=8):
         assert divisor >= 4
 
         self.data_bits = data_bits
         self.divisor   = divisor
 
         self.tx_o    = Signal()
-        self.rx_i    = Signal()
+        self.rx_i    = Signal(reset=1)
 
         self.tx_data = Signal(data_bits)
         self.tx_rdy  = Signal()
@@ -27,7 +40,7 @@ class UART(Elaboratable):
         self.rx_rdy  = Signal()
         self.rx_ack  = Signal()
 
-    def elaborate(self, platform):
+    def elaborate(self, platform: Platform) -> Module:
         m = Module()
 
         tx_phase = Signal(range(self.divisor))
@@ -86,9 +99,8 @@ class UART(Elaboratable):
 
         return m
 
-    def test_send_char(self, char):
+    def test_send_char(self, char: str):
         char = ord(char)
-        print("Sending ", bin(char))
 
         # Start bit
         yield self.rx_i.eq(0)
@@ -111,11 +123,10 @@ class UART(Elaboratable):
         for i in range(self.divisor):
             yield 
 
-    def test_receive_char(self):
+    def test_receive_char(self) -> str:
         # Wait for signal to go low
         while True:
             if (yield self.tx_o) == 0:
-                print ("Receiving")
                 break
             yield
 
@@ -138,7 +149,7 @@ class UART(Elaboratable):
 
         return chr(out)
 
-    def test_expect_string(self, string):
+    def test_expect_string(self, string: str) -> bool:
         for c in string:
             r = yield from self.test_receive_char()
             if r != c:
@@ -149,7 +160,7 @@ def test_uart_loopback():
     from nmigen.sim import Simulator, Passive
 
     class TestRig(Elaboratable):
-        def elaborate(self, platform):
+        def elaborate(self, platform: Platform):
             m = Module()
 
             m.submodules.uart = uart = UART(divisor=5)
@@ -201,5 +212,5 @@ def test_uart_loopback():
 
     sim.add_sync_process(transmit_proc)
 
-    with sim.write_vcd("uart.vcd", "uart.gtkw"):
+    with sim.write_vcd("uart.vcd"):
         sim.run()
