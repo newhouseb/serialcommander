@@ -5,7 +5,7 @@
 
 ## Quick Example
 
-Let's say you want to test a counter that can be incremented and decremented on real hardware and read out it's value. 
+Let's say you want to test a counter that can be incremented and decremented on real hardware and read out its value. 
 
 ```python
 # At the top of your module
@@ -48,7 +48,7 @@ m.d.comb += [
 ]
 ```
 
-If you build this on real hardware and test it with a serial console, you will see the following:
+If you build this on real hardware and test it with a serial console, you will see the following (after hitting enter and + and - numerous times):
 
 ```
 000++++
@@ -59,6 +59,15 @@ If you build this on real hardware and test it with a serial console, you will s
 ```
 
 Note that this is echoing the characters you send, but most terminals don't do this by default.
+
+## Included "Tasks"
+
+- **Trigger:** Sets a signal high for one cycle
+- **Toggle:** Toggles a signal from high to low
+- **TextMemoryPrinter:** Prints a null-terminated string from Memory.
+- **BinaryMemoryPrinter:** Prints words in a Memory in binary.
+- **BinarySignalPrinter:** Prints a signal's value in binary.
+- **DecimalSignalPrinter:** Prints a signal's value in decimal.
 
 ## Motivation
 
@@ -114,3 +123,17 @@ serialcommander/uart.py .                                                       
 
 ====================================== 7 passed in 0.27s ======================================
 ```
+
+## Contributing
+
+Contributions welcome, although digital interfaces tend to be brittle so I want to be thoughtful about changing them.
+
+Feedback also welcome, I've written a lot of software professionally but much less gateware.
+
+
+## Future Ideas
+
+I already use this in virtually every design I make, but in the future I could imagine:
+
+- The UART printing terminal control characters so you can have persistent UI that indicates the state of a given signal.
+- A websocket bridge to render logic-analyzer like UI in the browser
