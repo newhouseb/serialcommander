@@ -119,10 +119,15 @@ class UART(Elaboratable):
                 break
             yield
 
+        # Wait for half the divisor to get to the
+        # center of the bit
+        for i in range(self.divisor//2):
+            yield
+
         # Read each bit
         out = 0
         for i in range(8):
-            for i in range(self.divisor):
+            for _ in range(self.divisor):
                 yield
             if (yield self.tx_o):
                 out += (1 << i)
@@ -133,6 +138,12 @@ class UART(Elaboratable):
 
         return chr(out)
 
+    def test_expect_string(self, string):
+        for c in string:
+            r = yield from self.test_receive_char()
+            if r != c:
+                raise Exception("Expected {} but got {}".format(c, r))
+        return True
 
 def test_uart_loopback():
     from nmigen.sim import Simulator, Passive

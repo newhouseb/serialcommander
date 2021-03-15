@@ -276,7 +276,7 @@ def test_binary_signal_printer():
         def elaborate(self, platform):
             m = Module()
 
-            sig = Signal(3, reset=0b111)
+            sig = Signal(5, reset=0b10101)
 
             self.printer = BinarySignalPrinter(sig)
             self.uart = UART(divisor=5)
@@ -292,17 +292,9 @@ def test_binary_signal_printer():
     sim = Simulator(rig)
     sim.add_clock(1e-6)
 
-    def wait(n):
-        for i in range(n):
-            yield
-
     def transmit_proc():
         yield from rig.uart.test_send_char('1')
-
-        out = (yield from rig.uart.test_receive_char())
-
-        print(out, bin(ord(out)))
-        assert 1 == 2
+        assert (yield from rig.uart.test_expect_string('101'))
 
     sim.add_sync_process(transmit_proc)
 
