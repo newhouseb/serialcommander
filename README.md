@@ -1,7 +1,7 @@
 # serialcommander
 ## A small, convenient way to add a CLI to your digital logic
 
-`serialcommander` is a small nmigen tool that takes certain actions when you send it various characters over a serial port/UART.
+`serialcommander` is a small nmigen tool that executes various 'tasks' when sent various characters over a serial port/UART.
 
 ## Quick Example
 
