@@ -103,7 +103,7 @@ pip install git+https://github.com/nmigen/nmigen
 pip install git+https://github.com/newhouseb/serialcommander
 ```
 
-To test that everything without, there's an included playground that can be run with no hardware that explores the example above (on WSL on Windows, Linux or MacOS only):
+To test that everything easily, there's an included playground that can be run with no hardware that explores the example above (on WSL on Windows, Linux or MacOS only, not vanilla Windows):
 
 ```
 python -m serialcommander.playground
